@@ -9,6 +9,27 @@ import { registerUser } from '../utils/api';
 import { getDeviceId, getDeviceBrand } from '../utils/deviceInfo';
 import './Login.css';
 
+/* ── helpers ── */
+const Field = ({ label, icon: Icon, id, type = 'text', placeholder, value, onChange, mono }) => (
+  <div className="auth-field">
+    <label className="auth-label" htmlFor={id}>{label}</label>
+    <div className="auth-input-wrap">
+      <span className="auth-input-icon"><Icon size={14} /></span>
+      <input id={id} type={type} className={`auth-input${mono ? ' auth-otp-input' : ''}`}
+        placeholder={placeholder} value={value} onChange={onChange} />
+    </div>
+  </div>
+);
+
+const TextareaField = ({ label, id, placeholder, value, onChange }) => (
+  <div className="auth-field">
+    <label className="auth-label" htmlFor={id}>{label}</label>
+    <textarea id={id} rows={2} className="auth-input"
+      style={{ height: 'auto', paddingTop: '0.65rem', paddingBottom: '0.65rem', resize: 'vertical', paddingLeft: '1rem' }}
+      placeholder={placeholder} value={value} onChange={onChange} />
+  </div>
+);
+
 export default function Register() {
   const [role, setRole]     = useState('customer');
   const [form, setForm]     = useState({
@@ -60,27 +81,6 @@ export default function Register() {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally { setLoading(false); }
   };
-
-  /* ── helpers ── */
-  const Field = ({ label, icon: Icon, id, type = 'text', placeholder, value, onChange, mono }) => (
-    <div className="auth-field">
-      <label className="auth-label" htmlFor={id}>{label}</label>
-      <div className="auth-input-wrap">
-        <span className="auth-input-icon"><Icon size={14} /></span>
-        <input id={id} type={type} className={`auth-input${mono ? ' auth-otp-input' : ''}`}
-          placeholder={placeholder} value={value} onChange={onChange} />
-      </div>
-    </div>
-  );
-
-  const TextareaField = ({ label, id, placeholder, value, onChange }) => (
-    <div className="auth-field">
-      <label className="auth-label" htmlFor={id}>{label}</label>
-      <textarea id={id} rows={2} className="auth-input"
-        style={{ height: 'auto', paddingTop: '0.65rem', paddingBottom: '0.65rem', resize: 'vertical', paddingLeft: '1rem' }}
-        placeholder={placeholder} value={value} onChange={onChange} />
-    </div>
-  );
 
   return (
     <div className="auth-page">
