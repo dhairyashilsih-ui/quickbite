@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* =========================================
+   DESIGN TOKENS
+   ========================================= */
+:root {
+  --clr-bg: #080c14;
+  --clr-surface: #0d1423;
+  --clr-surface-elevated: #111827;
+  --clr-border: rgba(99, 179, 237, 0.12);
+  --clr-border-hover: rgba(99, 179, 237, 0.3);
+
+  /* Brand */
+  --clr-primary: #4f8ef7;
+  --clr-primary-glow: rgba(79, 142, 247, 0.35);
+  --clr-primary-dark: #3a72d8;
+  --clr-accent: #a78bfa;
+  --clr-accent-glow: rgba(167, 139, 250, 0.3);
+
+  /* Text */
+  --clr-text: #e2e8f0;
+  --clr-text-muted: #8896a7;
+  --clr-text-faint: #4a5568;
+
+  /* Status */
+  --clr-success: #34d399;
+  --clr-error: #f87171;
+  --clr-warning: #fbbf24;
+
+  /* Glass */
+  --glass-bg: rgba(13, 20, 35, 0.75);
+  --glass-border: rgba(255,255,255,0.07);
+  --glass-blur: blur(24px);
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease;
+}
+
+/* =========================================
+   RESET & BASE
+   ========================================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: #ffffff;
+  color: #111111;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   SCROLLBAR
+   ========================================= */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--clr-bg); }
+::-webkit-scrollbar-thumb { background: rgba(79,142,247,0.4); border-radius: 99px; }
+
+/* =========================================
+   AURORA BACKGROUND
+   ========================================= */
+.aurora {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.aurora::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,142,247,0.18) 0%, transparent 70%);
+  top: -150px;
+  left: -100px;
+  animation: drift1 18s ease-in-out infinite alternate;
+}
+.aurora::after {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(167,139,250,0.15) 0%, transparent 70%);
+  bottom: -80px;
+  right: -80px;
+  animation: drift2 14s ease-in-out infinite alternate;
+}
+@keyframes drift1 {
+  from { transform: translate(0,0) scale(1); }
+  to   { transform: translate(60px, 80px) scale(1.2); }
+}
+@keyframes drift2 {
+  from { transform: translate(0,0) scale(1); }
+  to   { transform: translate(-50px, -60px) scale(1.15); }
+}
+
+/* =========================================
+   GLASS CARD
+   ========================================= */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+}
+
+/* =========================================
+   UTILITY
+   ========================================= */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

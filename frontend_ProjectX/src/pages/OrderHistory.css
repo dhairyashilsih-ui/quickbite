@@ -1,0 +1,218 @@
+/* ══════════════════════════════════════════════
+   OrderHistory.css  –  QuickBite
+══════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+.oh-page {
+  min-height: 100vh;
+  background: #f7f7fb;
+  font-family: 'Inter', sans-serif;
+  color: #1a1a2e;
+}
+
+/* ── Nav ─────────────────────────────── */
+.oh-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #ebebeb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.oh-nav-brand { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+.oh-nav-brand .q { color: #e63946; }
+.oh-nav-brand .b { color: #1a1a2e; }
+.oh-back {
+  display: flex; align-items: center; gap: 0.4rem;
+  background: none; border: 1.5px solid #e0e0e0; border-radius: 8px;
+  padding: 0.45rem 0.9rem; font-size: 0.82rem; font-weight: 600;
+  cursor: pointer; color: #444; font-family: inherit;
+  transition: border-color .2s, background .2s;
+}
+.oh-back:hover { background: #f5f5f5; border-color: #bbb; }
+
+/* ── Body ───────────────────────────── */
+.oh-body {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+.oh-header { margin-bottom: 1.5rem; }
+.oh-title  { font-size: 1.5rem; font-weight: 800; color: #1a1a2e; margin: 0 0 0.25rem; }
+.oh-sub    { font-size: 0.87rem; color: #888; margin: 0; }
+
+/* ── Loading ────────────────────────── */
+.oh-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem;
+  color: #aaa;
+}
+.oh-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #e63946;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Empty ──────────────────────────── */
+.oh-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+.oh-empty-icon  { font-size: 3.5rem; margin-bottom: 0.75rem; }
+.oh-empty-title { font-size: 1.15rem; font-weight: 700; color: #1a1a2e; margin-bottom: 0.4rem; }
+.oh-empty-sub   { font-size: 0.87rem; color: #888; margin-bottom: 1.5rem; }
+
+.oh-shop-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e63946, #c1121f);
+  color: #fff; border: none;
+  font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 20px rgba(230,57,70,.3);
+}
+.oh-shop-btn:hover { opacity: .92; transform: translateY(-1px); }
+
+/* ── Order List ─────────────────────── */
+.oh-list { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── Order Card ─────────────────────── */
+.oh-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  display: flex;
+}
+.oh-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.1);
+}
+
+.oh-card-stripe {
+  width: 5px;
+  flex-shrink: 0;
+  transition: width .2s;
+}
+.oh-card:hover .oh-card-stripe { width: 7px; }
+
+.oh-card-body {
+  flex: 1;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.oh-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.oh-card-orderid {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+.oh-card-date {
+  font-size: 0.74rem;
+  color: #aaa;
+  margin-top: 0.2rem;
+  font-weight: 500;
+}
+
+.oh-status-chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Items Preview ──────────────────── */
+.oh-items-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.oh-items-imgs {
+  display: flex;
+  align-items: center;
+}
+.oh-item-img {
+  width: 38px; height: 38px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid #fff;
+  margin-left: -8px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.12);
+}
+.oh-items-imgs .oh-item-img:first-child { margin-left: 0; }
+.oh-item-more {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; color: #666;
+  margin-left: -8px;
+  border: 2px solid #fff;
+}
+.oh-items-names {
+  font-size: 0.82rem;
+  color: #555;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── Card Bottom ────────────────────── */
+.oh-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed #f0f0f0;
+  padding-top: 0.6rem;
+}
+.oh-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: #888;
+}
+.oh-dot-sep { color: #ccc; }
+.oh-card-total { font-weight: 800; color: #1a1a2e; font-size: 0.9rem; }
+
+.oh-track-link {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #e63946;
+}
+
+@media (max-width: 640px) {
+  .oh-nav  { padding: 0.75rem 1rem; }
+  .oh-body { padding: 1rem 0.75rem; }
+}

@@ -1,0 +1,17 @@
+/* SuperAdmin.css — tiny overrides on top of FoodStore.css */
+
+/* ensure white background everywhere */
+.super-admin-root { background: #ffffff !important; }
+
+/* table hover rows */
+table tbody tr:hover { background: #fafafa !important; transition: background 0.12s; }
+
+/* smooth tab transitions */
+.sa-tab-content { animation: fadeSlide 0.2s ease both; }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* sticky table header */
+table thead { position: sticky; top: 0; z-index: 1; }

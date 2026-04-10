@@ -1,0 +1,381 @@
+/* ══════════════════════════════════════════════
+   Checkout.css  –  QuickBite Checkout Page
+══════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Root ─────────────────────────────────── */
+.co-page {
+  min-height: 100vh;
+  background: #f7f7fb;
+  font-family: 'Inter', sans-serif;
+  color: #1a1a2e;
+}
+
+/* ── Nav ───────────────────────────────────── */
+.co-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #ebebeb;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.co-nav-brand { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }
+.co-nav-brand .q { color: #e63946; }
+.co-nav-brand .b { color: #1a1a2e; }
+
+.co-back {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #444;
+  font-family: 'Inter', sans-serif;
+  transition: border-color .2s, background .2s;
+}
+.co-back:hover { background: #f5f5f5; border-color: #bbb; }
+
+/* ── Steps ─────────────────────────────────── */
+.co-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1.5rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #ebebeb;
+}
+.co-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: .45;
+  transition: opacity .3s;
+}
+.co-step.active, .co-step.done { opacity: 1; }
+
+.co-step-circle {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  color: #888;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+  transition: background .3s, color .3s;
+}
+.co-step.active .co-step-circle {
+  background: #e63946; color: #fff;
+  box-shadow: 0 0 0 4px rgba(230,57,70,.18);
+}
+.co-step.done .co-step-circle { background: #16a34a; color: #fff; }
+
+.co-step-label {
+  font-size: 0.72rem; font-weight: 600;
+  color: #aaa;
+  white-space: nowrap;
+}
+.co-step.active .co-step-label, .co-step.done .co-step-label { color: #1a1a2e; }
+
+.co-step-line {
+  flex: 1;
+  max-width: 80px;
+  height: 2px;
+  background: #e0e0e0;
+  margin: 0 6px;
+  margin-bottom: 18px;
+  border-radius: 2px;
+  transition: background .3s;
+}
+.co-step-line.done { background: #16a34a; }
+
+/* ── Body ───────────────────────────────────── */
+.co-body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+.co-left { flex: 1; display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+
+/* ── Card ───────────────────────────────────── */
+.co-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+}
+.co-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* ── Order Items ────────────────────────────── */
+.co-item-list { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+.co-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 10px;
+  background: #fafafa;
+}
+.co-item-img { width: 46px; height: 46px; object-fit: cover; border-radius: 8px; }
+.co-item-info { flex: 1; }
+.co-item-name { font-size: 0.85rem; font-weight: 600; color: #1a1a2e; }
+.co-item-qty  { font-size: 0.75rem; color: #888; }
+.co-item-price { font-size: 0.87rem; font-weight: 700; color: #e63946; white-space: nowrap; }
+
+/* ── Price Rows ─────────────────────────────── */
+.co-price-rows {
+  border-top: 1px dashed #e8e8e8;
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.co-price-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #555;
+}
+.co-price-row.green span:last-child { color: #16a34a; font-weight: 700; }
+.co-price-row.total {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1.5px solid #e8e8e8;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+.co-price-row.total span:last-child { color: #e63946; }
+
+/* ── Error ──────────────────────────────────── */
+.co-error {
+  background: #fff5f5;
+  border: 1.5px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 8px;
+  padding: 0.6rem 0.875rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* ── Address Form ───────────────────────────── */
+.co-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.co-field.full { grid-column: 1 / -1; }
+.co-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.co-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.875rem;
+  border-radius: 10px;
+  border: 1.5px solid #e8e8ec;
+  font-size: 0.875rem;
+  font-family: 'Inter', sans-serif;
+  background: #fafafa;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.co-field input:focus {
+  border-color: #e63946;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(230,57,70,.1);
+}
+
+/* ── Buttons ───────────────────────────────── */
+.co-primary-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e63946, #c1121f);
+  color: #fff;
+  border: none;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 20px rgba(230,57,70,.35);
+}
+.co-primary-btn:hover:not(:disabled) { opacity: .92; transform: translateY(-1px); }
+.co-primary-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.co-outline-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #fff;
+  color: #1a1a2e;
+  border: 2px solid #e0e0e0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: border-color .2s, background .2s;
+}
+.co-outline-btn:hover { border-color: #bbb; background: #f5f5f5; }
+
+/* ── Payment Methods ────────────────────────── */
+.co-pay-methods { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
+.co-pay-method {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  border: 2px solid #e8e8ec;
+  cursor: pointer;
+  transition: border-color .2s, background .2s, transform .15s;
+  position: relative;
+}
+.co-pay-method:hover { border-color: #e63946; background: #fff5f5; }
+.co-pay-method.selected {
+  border-color: #e63946;
+  background: linear-gradient(135deg, #fff5f5, #fff);
+  box-shadow: 0 2px 12px rgba(230,57,70,.12);
+}
+.co-pay-method input[type=radio] { display: none; }
+.co-pay-icon { color: #e63946; }
+.co-pay-info { flex: 1; }
+.co-pay-label { font-size: 0.9rem; font-weight: 700; color: #1a1a2e; }
+.co-pay-desc  { font-size: 0.76rem; color: #888; margin-top: 0.15rem; }
+.co-pay-check { color: #16a34a; }
+
+.co-pay-btn { margin-top: 0.25rem; }
+
+.co-safe-txt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 0.75rem;
+  font-weight: 500;
+}
+
+/* ── Processing Overlay ─────────────────────── */
+.co-pay-processing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: #fff9fa;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border: 1.5px dashed #e63946;
+}
+.co-pay-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #fca5a5;
+  border-top-color: #e63946;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Success ────────────────────────────────── */
+.co-success-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 2rem;
+}
+.co-success-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+  text-align: center;
+  animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn {
+  from { transform: scale(.85); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.co-success-icon { font-size: 4rem; margin-bottom: 0.75rem; animation: bounce 0.6s ease both 0.3s; }
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-12px); }
+}
+.co-success-title { font-size: 1.5rem; font-weight: 800; color: #1a1a2e; margin: 0 0 0.5rem; }
+.co-success-sub   { font-size: 0.9rem; color: #777; margin: 0 0 1.75rem; }
+
+.co-order-info {
+  background: #f7f7fb;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.75rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.co-order-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 0.85rem;
+}
+.co-order-info-row span:first-child { color: #888; font-weight: 500; }
+.co-order-info-row span:last-child  { color: #1a1a2e; font-weight: 700; }
+.co-order-id    { font-family: monospace; font-size: 1rem; color: #e63946 !important; letter-spacing: 1px; }
+.co-order-total { font-size: 1.05rem; color: #16a34a !important; }
+
+.co-success-actions { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* ── Responsive ─────────────────────────────── */
+@media (max-width: 640px) {
+  .co-body { flex-direction: column; padding: 1rem 0.75rem; }
+  .co-form-grid { grid-template-columns: 1fr; }
+  .co-field.full { grid-column: auto; }
+  .co-nav { padding: 0.75rem 1rem; }
+  .co-steps { padding: 1rem; gap: 0; }
+  .co-step-label { display: none; }
+}
