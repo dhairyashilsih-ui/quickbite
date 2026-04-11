@@ -28,3 +28,10 @@ export const updateProductBackend = (id, data) => API.put(`/products/${id}`, dat
 // Orders API
 export const getAllOrdersAPI = () => API.get('/orders/all', getAuthHeaders());
 export const updateOrderStatusAPI = (id, status) => API.put(`/orders/${id}/status`, { status }, getAuthHeaders());
+
+// Razorpay Payments API
+export const createRazorpayOrderAPI = (amount) =>
+  API.post('/payments/create-order', { amount }, getAuthHeaders());
+
+export const verifyRazorpayPaymentAPI = (data) =>
+  API.post('/payments/verify', data, getAuthHeaders());

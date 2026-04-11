@@ -2,44 +2,56 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, MapPin, CreditCard, Smartphone, Wallet,
-  CheckCircle, Lock, ChevronRight, ShoppingBag
+  CheckCircle, Lock, ChevronRight, ShoppingBag, AlertCircle
 } from 'lucide-react';
 
-import { useCart } from '../context/CartContext';
+import { useCart }   from '../context/CartContext';
 import { useOrders } from '../context/OrderContext';
+import { createRazorpayOrderAPI, verifyRazorpayPaymentAPI } from '../utils/api';
 import './Checkout.css';
 
 const PAYMENT_METHODS = [
-  { id: 'razorpay', label: 'Pay Online (Razorpay)', icon: <CreditCard size={20} />, desc: 'UPI • Cards • NetBanking' },
+  { id: 'razorpay', label: 'Pay Online (Razorpay)', icon: <CreditCard size={20} />, desc: 'UPI • Cards • NetBanking • Wallets' },
   { id: 'cod',      label: 'Cash on Delivery',      icon: <Wallet     size={20} />, desc: 'Pay when you receive' },
 ];
 
-const DELIVERY_FEE = 49;
-const PLATFORM_FEE = 5;
+const DELIVERY_FEE  = 49;
+const PLATFORM_FEE  = 5;
+
+/* ── Dynamically load Razorpay checkout script ── */
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const script  = document.createElement('script');
+    script.src    = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 
 export default function Checkout() {
-  const navigate   = useNavigate();
+  const navigate            = useNavigate();
   const { cart, cartTotal, cartMrp, clearCart } = useCart();
-  const { placeOrder } = useOrders();
+  const { placeOrder }      = useOrders();
 
   /* form state */
-  const [step,           setStep]     = useState(1); // 1 = address, 2 = payment, 3 = success
-  const [address,        setAddress]  = useState('');
-  const [landmark,       setLandmark] = useState('');
-  const [pincode,        setPincode]  = useState('');
-  const [name,           setName]     = useState('');
-  const [phone,          setPhone]    = useState('');
-  const [payMethod,      setPayMethod]= useState('razorpay');
-  const [placing,        setPlacing]  = useState(false);
-  const [error,          setError]    = useState('');
-  const [placedOrder,    setPlaced]   = useState(null);
-  const [payAnim,        setPayAnim]  = useState(false);   // payment "processing" animation
+  const [step,        setStep]      = useState(1);
+  const [address,     setAddress]   = useState('');
+  const [landmark,    setLandmark]  = useState('');
+  const [pincode,     setPincode]   = useState('');
+  const [name,        setName]      = useState('');
+  const [phone,       setPhone]     = useState('');
+  const [payMethod,   setPayMethod] = useState('razorpay');
+  const [placing,     setPlacing]   = useState(false);
+  const [error,       setError]     = useState('');
+  const [placedOrder, setPlaced]    = useState(null);
+  const [payAnim,     setPayAnim]   = useState(false);
 
   const discount    = cartMrp - cartTotal;
   const deliveryFee = cartTotal > 499 ? 0 : DELIVERY_FEE;
   const grandTotal  = cartTotal + PLATFORM_FEE + deliveryFee;
 
-  /* step 1 validation */
+  /* ── Step 1 validation ── */
   const handleAddressNext = () => {
     if (!name.trim() || !phone.trim() || !address.trim() || !pincode.trim()) {
       setError('Please fill all required fields.');
@@ -57,64 +69,143 @@ export default function Checkout() {
     setStep(2);
   };
 
-  /* step 2: place order & payment handler */
+  /* ── Shared: save purchased IDs & clear cart ── */
+  const finalisePurchase = (orderData) => {
+    let purchased = JSON.parse(localStorage.getItem('qb_purchased') || '[]');
+    const newIds  = cart.map(i => i.id);
+    purchased     = [...new Set([...purchased, ...newIds])].slice(-50);
+    localStorage.setItem('qb_purchased', JSON.stringify(purchased));
+    clearCart();
+    setPlaced(orderData);
+    setStep(3);
+  };
+
+  /* ── Razorpay modal flow ── */
+  const handleRazorpayPayment = async (addressFull, payload) => {
+    // 1. Load the Razorpay script
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      setError('Failed to load Razorpay. Please check your internet connection.');
+      setPlacing(false);
+      return;
+    }
+
+    // 2. Create Razorpay order on our backend
+    let rzpOrder;
+    try {
+      const { data } = await createRazorpayOrderAPI(grandTotal);
+      if (!data.success) throw new Error(data.message);
+      rzpOrder = data;
+    } catch (e) {
+      setError('Could not initiate payment. Please try again.');
+      setPlacing(false);
+      return;
+    }
+
+    // 3. Open Razorpay checkout modal
+    const options = {
+      key:         rzpOrder.key_id,
+      amount:      rzpOrder.amount,     // in paise (set by backend)
+      currency:    rzpOrder.currency,
+      name:        'QuickBite',
+      description: `Order of ₹${grandTotal}`,
+      image:       '/basket ui.png',
+      order_id:    rzpOrder.order_id,
+      prefill: {
+        name:    name,
+        contact: phone,
+      },
+      theme: { color: '#e63946' },
+
+      /* ── Payment SUCCESS handler ── */
+      handler: async (response) => {
+        try {
+          // 4. Verify signature on backend
+          const { data: verifyData } = await verifyRazorpayPaymentAPI({
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature:  response.razorpay_signature,
+          });
+
+          if (!verifyData.success) {
+            setError('Payment verification failed. Contact support with payment ID: ' + response.razorpay_payment_id);
+            setPlacing(false);
+            return;
+          }
+
+          // 5. Record order in our DB now that payment is confirmed
+          const order = await placeOrder({
+            ...payload,
+            razorpay_order_id:   response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+          });
+
+          finalisePurchase(order);
+        } catch (err) {
+          setError('Payment succeeded but order recording failed. Please contact support.');
+          setPlacing(false);
+        }
+      },
+
+      /* ── Modal closed / dismissed ── */
+      modal: {
+        ondismiss: () => {
+          setError('Payment was cancelled. You have not been charged.');
+          setPlacing(false);
+        },
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+
+    // Handle payment failure inside modal
+    rzp.on('payment.failed', (response) => {
+      setError(`Payment failed: ${response.error.description} (Code: ${response.error.code})`);
+      setPlacing(false);
+    });
+
+    rzp.open();
+  };
+
+  /* ── COD flow ── */
+  const handleCOD = async (payload) => {
+    setPayAnim(true);
+    await new Promise(r => setTimeout(r, 1800));
+    setPayAnim(false);
+    const order = await placeOrder(payload);
+    finalisePurchase(order);
+  };
+
+  /* ── Main submit handler ── */
   const handlePayNow = async () => {
     setPlacing(true);
     setError('');
 
+    const addressFull = `${name}, ${phone} | ${address}${landmark ? ', ' + landmark : ''}, PIN ${pincode}`;
+    const payload = {
+      items:       cart.map(i => ({ id: i.id, name: i.name, image: i.image, price: i.price, qty: i.qty })),
+      address:     addressFull,
+      paymentMethod: payMethod,
+      subtotal:    cartTotal,
+      deliveryFee: deliveryFee,
+      platformFee: PLATFORM_FEE,
+      discount:    discount,
+      total:       grandTotal,
+    };
+
     try {
-      const addressFull = `${name}, ${phone} | ${address}${landmark ? ', ' + landmark : ''}, PIN ${pincode}`;
-      const payload = {
-        items: cart.map(i => ({ id: i.id, name: i.name, image: i.image, price: i.price, qty: i.qty })),
-        address: addressFull,
-        paymentMethod: payMethod,
-        subtotal:    cartTotal,
-        deliveryFee: deliveryFee,
-        platformFee: PLATFORM_FEE,
-        discount:    discount,
-        total:       grandTotal,
-      };
-
       if (payMethod === 'razorpay') {
-        // Place the order BEFORE leaving the page so it's recorded
-        const order = await placeOrder(payload);
-
-        let purchased = JSON.parse(localStorage.getItem('qb_purchased') || '[]');
-        const newIds = cart.map(i => i.id);
-        purchased = [...new Set([...purchased, ...newIds])].slice(-50);
-        localStorage.setItem('qb_purchased', JSON.stringify(purchased));
-
-        clearCart();
-        
-        // Browser security (3rd party cookies) prevents Razorpay.me from working inside an iframe.
-        // We open it directly in the same window, bypassing the error lock completely.
-        window.location.href = `https://razorpay.me/@dhairyashildeepakshinde?amount=${grandTotal}&phone=${phone}`;
-        return;
+        await handleRazorpayPayment(addressFull, payload);
+      } else {
+        await handleCOD(payload);
       }
-
-      // COD Flow
-      setPayAnim(true);
-      await new Promise(r => setTimeout(r, 2000));
-      setPayAnim(false);
-
-      const order = await placeOrder(payload);
-
-      let purchased = JSON.parse(localStorage.getItem('qb_purchased') || '[]');
-      const newIds = cart.map(i => i.id);
-      purchased = [...new Set([...purchased, ...newIds])].slice(-50);
-      localStorage.setItem('qb_purchased', JSON.stringify(purchased));
-
-      clearCart();
-      setPlaced(order);
-      setStep(3);
     } catch (err) {
-      setError('Order failed. Please try again.');
+      setError('Something went wrong. Please try again.');
       setPlacing(false);
     }
   };
 
-
-  /* ─────────────── RENDER ─────────────────── */
+  /* ─────────────────────────── RENDER ─────────────────────────── */
   return (
     <div className="co-page">
 
@@ -149,7 +240,7 @@ export default function Checkout() {
 
       <div className="co-body">
 
-        {/* ─── STEP 1: Cart Confirmation (shown always on left) ─── */}
+        {/* ─── STEP 1 & 2: Left column ─── */}
         {step < 3 && (
           <div className="co-left">
 
@@ -179,11 +270,11 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* ─── STEP 1: Address Input ─── */}
+            {/* ─── STEP 1: Address ─── */}
             {step === 1 && (
               <div className="co-card">
                 <p className="co-card-title"><MapPin size={16} /> Delivery Address</p>
-                {error && <div className="co-error">{error}</div>}
+                {error && <div className="co-error"><AlertCircle size={14}/> {error}</div>}
 
                 <div className="co-form-grid">
                   <div className="co-field">
@@ -218,7 +309,7 @@ export default function Checkout() {
             {step === 2 && (
               <div className="co-card">
                 <p className="co-card-title"><CreditCard size={16} /> Select Payment Method</p>
-                {error && <div className="co-error">{error}</div>}
+                {error && <div className="co-error"><AlertCircle size={14}/> {error}</div>}
 
                 <div className="co-pay-methods">
                   {PAYMENT_METHODS.map(m => (
@@ -234,13 +325,29 @@ export default function Checkout() {
                   ))}
                 </div>
 
-                <button className="co-primary-btn co-pay-btn" onClick={handlePayNow} disabled={placing || payAnim}>
-                  {placing || payAnim ? '⏳ Processing…' : 
-                   payMethod === 'razorpay' ? `💳 Pay ₹${grandTotal} (Online Component)` : 
-                   `📦 Place Order (Cash on Delivery)`}
+                {/* Razorpay trust badges */}
+                {payMethod === 'razorpay' && (
+                  <div className="co-rzp-badges">
+                    <span>🔒 Secured by Razorpay</span>
+                    <span>💳 All cards accepted</span>
+                    <span>📱 UPI / NetBanking</span>
+                    <span>👛 Paytm / PhonePe</span>
+                  </div>
+                )}
+
+                <button
+                  className="co-primary-btn co-pay-btn"
+                  onClick={handlePayNow}
+                  disabled={placing || payAnim}
+                >
+                  {placing || payAnim
+                    ? '⏳ Opening Payment…'
+                    : payMethod === 'razorpay'
+                      ? `💳 Pay ₹${grandTotal} Securely`
+                      : `📦 Place Order (Cash on Delivery)`}
                 </button>
 
-                <p className="co-safe-txt"><Lock size={12} /> 100% Secure Payments · 256-bit SSL Encrypted</p>
+                <p className="co-safe-txt"><Lock size={12} /> 100% Secure · 256-bit SSL · Powered by Razorpay</p>
               </div>
             )}
           </div>
@@ -263,6 +370,12 @@ export default function Checkout() {
                   <span>Payment</span>
                   <span>✅ {PAYMENT_METHODS.find(m => m.id === placedOrder.payment_method)?.label || placedOrder.payment_method}</span>
                 </div>
+                {placedOrder.razorpay_payment_id && (
+                  <div className="co-order-info-row">
+                    <span>Transaction ID</span>
+                    <span className="co-order-id">{placedOrder.razorpay_payment_id}</span>
+                  </div>
+                )}
                 <div className="co-order-info-row">
                   <span>Total Paid</span>
                   <span className="co-order-total">₹{placedOrder.total}</span>

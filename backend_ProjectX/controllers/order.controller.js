@@ -6,7 +6,7 @@ const { supabase } = require('../config/supabase');
 const createOrder = async (req, res) => {
   try {
     const user_id = req.user.id;
-    const { items, address, paymentMethod, subtotal, deliveryFee, platformFee, discount, total } = req.body;
+    const { items, address, paymentMethod, subtotal, deliveryFee, platformFee, discount, total, razorpay_order_id, razorpay_payment_id } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'Cart is empty.' });
@@ -30,6 +30,9 @@ const createOrder = async (req, res) => {
         total,
         status: 'Placed',
         status_timestamps: JSON.stringify({ Placed: new Date().toISOString() }),
+        // Store Razorpay IDs if present (null for COD)
+        razorpay_order_id:   razorpay_order_id   || null,
+        razorpay_payment_id: razorpay_payment_id || null,
       })
       .select('*')
       .single();

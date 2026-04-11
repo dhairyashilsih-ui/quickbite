@@ -26,10 +26,12 @@ app.use(cors({
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/auth',     authRoutes);
+app.use('/api/admin',    adminRoutes);
 app.use('/api/products', require('./routes/product.routes'));
 app.use('/api/orders',   require('./routes/order.routes'));
+app.use('/api/payments', require('./routes/payment.routes'));
+
 
 const PORT = process.env.PORT || 5000;
 
