@@ -10,9 +10,8 @@ import { useOrders } from '../context/OrderContext';
 import './Checkout.css';
 
 const PAYMENT_METHODS = [
-  { id: 'upi',  label: 'UPI / QR Code',      icon: <Smartphone size={20} />, desc: 'PhonePe • GPay • Paytm' },
-  { id: 'card', label: 'Credit / Debit Card', icon: <CreditCard size={20} />, desc: 'Visa • Mastercard • RuPay' },
-  { id: 'cod',  label: 'Cash on Delivery',    icon: <Wallet     size={20} />, desc: 'Pay when you receive' },
+  { id: 'razorpay', label: 'Pay Online (Razorpay)', icon: <CreditCard size={20} />, desc: 'UPI • Cards • NetBanking' },
+  { id: 'cod',      label: 'Cash on Delivery',      icon: <Wallet     size={20} />, desc: 'Pay when you receive' },
 ];
 
 const DELIVERY_FEE = 49;
@@ -30,7 +29,7 @@ export default function Checkout() {
   const [pincode,        setPincode]  = useState('');
   const [name,           setName]     = useState('');
   const [phone,          setPhone]    = useState('');
-  const [payMethod,      setPayMethod]= useState('upi');
+  const [payMethod,      setPayMethod]= useState('razorpay');
   const [placing,        setPlacing]  = useState(false);
   const [error,          setError]    = useState('');
   const [placedOrder,    setPlaced]   = useState(null);
@@ -39,11 +38,6 @@ export default function Checkout() {
   const discount    = cartMrp - cartTotal;
   const deliveryFee = cartTotal > 499 ? 0 : DELIVERY_FEE;
   const grandTotal  = cartTotal + PLATFORM_FEE + deliveryFee;
-
-  const firstUpiItem = cart.find(i => i.upiId) || cart[0];
-  const targetUpi = firstUpiItem?.upiId || 'quickbite@upi';
-  const targetName = firstUpiItem?.storeName || 'QuickBite';
-  const upiLink = `upi://pay?pa=${targetUpi}&pn=${encodeURIComponent(targetName)}&am=${grandTotal}&cu=INR`;
 
   /* step 1 validation */
   const handleAddressNext = () => {
@@ -63,20 +57,10 @@ export default function Checkout() {
     setStep(2);
   };
 
-  /* step 2: place order (fake payment) */
+  /* step 2: place order & payment handler */
   const handlePayNow = async () => {
-    if (payMethod === 'upi') {
-      const confirmed = window.confirm("Please confirm: Have you successfully completed the UPI transfer?");
-      if (!confirmed) return;
-    }
-
     setPlacing(true);
-    setPayAnim(true);
     setError('');
-
-    // Fake 2-second payment delay
-    await new Promise(r => setTimeout(r, 2000));
-    setPayAnim(false);
 
     try {
       const addressFull = `${name}, ${phone} | ${address}${landmark ? ', ' + landmark : ''}, PIN ${pincode}`;
@@ -90,23 +74,45 @@ export default function Checkout() {
         discount:    discount,
         total:       grandTotal,
       };
-      const order = await placeOrder(payload);
-      setPlaced(order);
 
-      // Track Purchases for AI Recommendations
+      if (payMethod === 'razorpay') {
+        // Place the order BEFORE leaving the page so it's recorded
+        const order = await placeOrder(payload);
+
+        let purchased = JSON.parse(localStorage.getItem('qb_purchased') || '[]');
+        const newIds = cart.map(i => i.id);
+        purchased = [...new Set([...purchased, ...newIds])].slice(-50);
+        localStorage.setItem('qb_purchased', JSON.stringify(purchased));
+
+        clearCart();
+        
+        // Browser security (3rd party cookies) prevents Razorpay.me from working inside an iframe.
+        // We open it directly in the same window, bypassing the error lock completely.
+        window.location.href = `https://razorpay.me/@dhairyashildeepakshinde?amount=${grandTotal}&phone=${phone}`;
+        return;
+      }
+
+      // COD Flow
+      setPayAnim(true);
+      await new Promise(r => setTimeout(r, 2000));
+      setPayAnim(false);
+
+      const order = await placeOrder(payload);
+
       let purchased = JSON.parse(localStorage.getItem('qb_purchased') || '[]');
       const newIds = cart.map(i => i.id);
-      purchased = [...new Set([...purchased, ...newIds])].slice(-50); // Keep last 50
+      purchased = [...new Set([...purchased, ...newIds])].slice(-50);
       localStorage.setItem('qb_purchased', JSON.stringify(purchased));
 
       clearCart();
+      setPlaced(order);
       setStep(3);
     } catch (err) {
-      setError('Payment failed. Please try again.');
-    } finally {
+      setError('Order failed. Please try again.');
       setPlacing(false);
     }
   };
+
 
   /* ─────────────── RENDER ─────────────────── */
   return (
@@ -228,29 +234,10 @@ export default function Checkout() {
                   ))}
                 </div>
 
-                {/* Payment animation overlay */}
-                {payAnim && (
-                  <div className="co-pay-processing">
-                    <div className="co-pay-spinner" />
-                    <p>Processing payment… Please wait</p>
-                  </div>
-                )}
-
-                {payMethod === 'upi' && !payAnim && (
-                  <div style={{ textAlign: 'center', marginBottom: '1.25rem', padding: '1rem', background: '#fafafa', borderRadius: '12px', border: '1.5px dashed #e8e8ec' }}>
-                    <p style={{ fontSize: '0.85rem', fontWeight: 600, color: '#555', marginBottom: '0.75rem' }}>Scan to Pay {targetName}</p>
-                    <div style={{ background: '#fff', padding: '0.5rem', display: 'inline-block', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(upiLink)}`} alt="UPI QR Code" width={140} height={140} style={{ display: 'block' }} />
-                    </div>
-                    <p style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.5rem', fontFamily: 'monospace' }}>{targetUpi}</p>
-                  </div>
-                )}
-
-                <button className="co-primary-btn co-pay-btn" onClick={handlePayNow} disabled={placing}>
-                  {placing ? '⏳ Processing…' : 
-                   payMethod === 'upi' ? `✅ I've Paid ₹${grandTotal} via UPI` : 
-                   payMethod === 'cod' ? '📦 Place Order (Cash on Delivery)' : 
-                   `💳 Pay ₹${grandTotal}`}
+                <button className="co-primary-btn co-pay-btn" onClick={handlePayNow} disabled={placing || payAnim}>
+                  {placing || payAnim ? '⏳ Processing…' : 
+                   payMethod === 'razorpay' ? `💳 Pay ₹${grandTotal} (Online Component)` : 
+                   `📦 Place Order (Cash on Delivery)`}
                 </button>
 
                 <p className="co-safe-txt"><Lock size={12} /> 100% Secure Payments · 256-bit SSL Encrypted</p>

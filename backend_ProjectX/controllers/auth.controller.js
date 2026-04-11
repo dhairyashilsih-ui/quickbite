@@ -11,7 +11,7 @@ const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const generateOtp  = () => crypto.randomInt(100000, 999999).toString();
-const issueToken   = (user) => jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+const issueToken   = (user) => jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, JWT_SECRET, { expiresIn: '1d' });
 
 // ── Supabase Logging Helpers ─────────────────────────────────────────────────
 const logLoginActivity = async (userId, deviceBrand, location) => {

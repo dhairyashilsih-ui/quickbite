@@ -1,17 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Store, LayoutDashboard, ShoppingCart, Users, Package,
   Settings, LogOut, Search, Bell, TrendingUp, DollarSign,
   ArrowUpRight, ArrowDownRight, MoreHorizontal, Filter,
   Plus, ChevronRight, Star, Clock, Truck, BarChart2,
   Tag, RefreshCcw, CheckCircle, AlertCircle, Eye,
-  Menu, X, Flame, Upload, Edit3, Trash2, Download
+  Menu, X, Flame, Upload, Edit3, Trash2, Download, BellOff
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './Admin.css';
 import { useProducts } from '../context/ProductsContext';
 import { getAllOrdersAPI, updateOrderStatusAPI } from '../utils/api';
 import Chatbot from '../components/Chatbot';
+
+const parseJwt = (token) => {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+};
 
 // (Removed mock stats/orders)
 
@@ -38,11 +46,112 @@ export default function Admin() {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // ── ADMIN IDENTITY ──
+  const [adminId, setAdminId] = useState(null);
+  const [adminName, setAdminName] = useState('Seller Admin');
+  const [toastMsg, setToastMsg] = useState('');
+  const [prevOrderCount, setPrevOrderCount] = useState(0);
+
+  // ── NOTIFICATION SYSTEM ──
+  const [notifications, setNotifications] = useState([]);
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const prevOrdersRef = useRef({});  // track {orderId: status}
+  const notifPanelRef = useRef(null);
+  const initialized = useRef(false);
+
+  // Close notification panel on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (notifPanelRef.current && !notifPanelRef.current.contains(e.target)) {
+        setNotifPanelOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const addNotification = (msg, type = 'info') => {
+    const notif = { id: Date.now() + Math.random(), msg, type, time: new Date(), read: false };
+    setNotifications(prev => [notif, ...prev.slice(0, 29)]);
+    setUnreadCount(prev => prev + 1);
+    // Show toast for important events
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 6000);
+  };
+
+  const markAllRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
+
+  useEffect(() => {
+    const token = localStorage.getItem('projectx_token');
+    if (token) {
+      const decoded = parseJwt(token);
+      if (decoded && decoded.id) setAdminId(decoded.id);
+      if (decoded && decoded.name) setAdminName(decoded.name);
+    }
+  }, []);
+
+  // ── AUTO REFRESH ──
+  useEffect(() => {
+    const int = setInterval(() => {
+      fetchOrders();
+    }, 5000);
+    return () => clearInterval(int);
+  }, []);
+
+  // ── FILTERED DATASETS ──
+  const adminProducts = products.filter(p => !adminId || p.seller_id === adminId);
+  const myProductIds = new Set(adminProducts.map(p => p.id));
+  
+  const calcSellerRev = (order) => {
+    if (!order.items) return 0;
+    return order.items.reduce((sum, item) => sum + (myProductIds.has(item.id) ? item.price * item.qty : 0), 0);
+  };
+
   // ── ORDERS STATE ──
-  const [orders, setOrders] = useState([]);
+  const [rawOrders, setRawOrders] = useState([]);
   const [orderFilter, setOrderFilter] = useState('All Orders');
+
+  const orders = rawOrders.filter(o => o.items && o.items.some(item => myProductIds.has(item.id)));
   const [viewingOrder, setViewingOrder] = useState(null);
   const [newStatus, setNewStatus] = useState('');
+
+  // ── NOTIFICATIONS: Detect new orders & status changes ──
+  useEffect(() => {
+    if (orders.length === 0) return;
+
+    if (!initialized.current) {
+      // First load — seed the reference map, don't fire notifications
+      const map = {};
+      orders.forEach(o => { map[o.order_id] = o.status; });
+      prevOrdersRef.current = map;
+      setPrevOrderCount(orders.length);
+      initialized.current = true;
+      return;
+    }
+
+    const prevMap = prevOrdersRef.current;
+    const newMap = {};
+    let hasNew = false;
+
+    orders.forEach(o => {
+      newMap[o.order_id] = o.status;
+      if (!prevMap[o.order_id]) {
+        // Brand-new order
+        hasNew = true;
+        addNotification(`🛒 New order #${o.order_id} received from ${getCustomerName(o.address)}!`, 'order');
+      } else if (prevMap[o.order_id] !== o.status) {
+        // Status changed by customer or system
+        addNotification(`📦 Order #${o.order_id} status changed: ${prevMap[o.order_id]} → ${o.status}`, 'status');
+      }
+    });
+
+    prevOrdersRef.current = newMap;
+    if (orders.length !== prevOrderCount) setPrevOrderCount(orders.length);
+  }, [orders]);
 
   // ── REPORTS STATE ──
   const [reportStart, setReportStart] = useState(() => {
@@ -61,7 +170,7 @@ export default function Admin() {
     try {
       const res = await getAllOrdersAPI();
       if (res.data.success) {
-        setOrders(res.data.orders);
+        setRawOrders(res.data.orders);
       }
     } catch (e) {
       console.error('Failed to fetch admin orders', e);
@@ -86,7 +195,7 @@ export default function Admin() {
     });
 
     const successful = filtered.filter(o => o.status !== 'Cancelled');
-    const totalRev = successful.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const totalRev = successful.reduce((sum, o) => sum + calcSellerRev(o), 0);
     const rate = filtered.length ? Math.round((successful.length / filtered.length) * 100) : 0;
 
     setReportData(filtered);
@@ -96,7 +205,7 @@ export default function Admin() {
     filtered.forEach(o => {
       if(o.status === 'Cancelled') return;
       const d = new Date(o.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-      groups[d] = (groups[d] || 0) + Number(o.total || 0);
+      groups[d] = (groups[d] || 0) + calcSellerRev(o);
     });
     const cData = Object.keys(groups).map(k => ({ date: k, revenue: groups[k] }));
     setChartData(cData);
@@ -108,7 +217,7 @@ export default function Admin() {
     const rows = reportData.map(o => [
       o.order_id,
       getCustomerName(o.address).replace(/,/g, ' '),
-      o.total,
+      calcSellerRev(o),
       o.payment_method || '-',
       o.status,
       new Date(o.created_at).toLocaleString().replace(/,/g, ' ')
@@ -221,7 +330,7 @@ export default function Admin() {
   };
 
   // Filter products for the table (we can keep all in Admin to see Inactive ones)
-  const displayProducts = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  const displayProducts = adminProducts.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   // Filter orders
   const displayOrders = orders.filter(o => {
@@ -251,10 +360,10 @@ export default function Admin() {
   todayStart.setHours(0,0,0,0);
   const todaysOrders = orders.filter(o => new Date(o.created_at) >= todayStart);
   
-  const todayRevenue = todaysOrders.filter(o => o.status !== 'Cancelled').reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const todayRevenue = todaysOrders.filter(o => o.status !== 'Cancelled').reduce((sum, o) => sum + calcSellerRev(o), 0);
   
-  const lowStockProducts = products.filter(p => p.stock > 0 && p.stock <= 10).slice(0, 4);
-  const trendingProducts = [...products].sort((a,b) => (b.reviews||0) - (a.reviews||0)).slice(0, 4);
+  const lowStockProducts = adminProducts.filter(p => p.stock > 0 && p.stock <= 10).slice(0, 4);
+  const trendingProducts = [...adminProducts].sort((a,b) => (b.reviews||0) - (a.reviews||0)).slice(0, 4);
 
   const pipelineStats = {
     placed: orders.filter(o => o.status === 'Placed').length,
@@ -267,7 +376,7 @@ export default function Admin() {
   todaysOrders.forEach(o => {
     if(o.status === 'Cancelled') return;
     const n = getCustomerName(o.address);
-    if(n) { custMap[n] = (custMap[n] || 0) + Number(o.total || 0); }
+    if(n) { custMap[n] = (custMap[n] || 0) + calcSellerRev(o); }
   });
   let topCustomer = { name: 'No sales yet', amount: 0 };
   Object.entries(custMap).forEach(([name, amt]) => {
@@ -331,14 +440,55 @@ export default function Admin() {
           </div>
 
           <div className="ad-topbar-right">
-            <button className="ad-icon-btn" title="Notifications">
-              <Bell size={20} />
-              <span className="notif-dot" />
-            </button>
+            {/* ── NOTIFICATION BELL ── */}
+            <div className="ad-notif-wrapper" ref={notifPanelRef}>
+              <button
+                className={`ad-icon-btn ${notifPanelOpen ? 'active' : ''}`}
+                title="Notifications"
+                onClick={() => { setNotifPanelOpen(o => !o); if (!notifPanelOpen) markAllRead(); }}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="notif-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {notifPanelOpen && (
+                <div className="ad-notif-panel">
+                  <div className="anp-header">
+                    <span className="anp-title">🔔 Notifications</span>
+                    <button className="anp-clear" onClick={() => { setNotifications([]); setUnreadCount(0); }}>Clear all</button>
+                  </div>
+                  <div className="anp-list">
+                    {notifications.length === 0 ? (
+                      <div className="anp-empty">
+                        <BellOff size={28} />
+                        <p>All caught up! No notifications yet.</p>
+                      </div>
+                    ) : notifications.map(n => (
+                      <div key={n.id} className={`anp-item ${n.type} ${n.read ? 'read' : 'unread'}`}>
+                        <div className="anp-icon">
+                          {n.type === 'order' ? <ShoppingCart size={14}/> : n.type === 'status' ? <RefreshCcw size={14}/> : <Bell size={14}/>}
+                        </div>
+                        <div className="anp-content">
+                          <p className="anp-msg">{n.msg}</p>
+                          <span className="anp-time">{n.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="anp-footer">
+                    <span className="anp-refresh">⟳ Auto-refreshes every 5s</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="ad-avatar-wrap">
-              <div className="ad-avatar">S</div>
+              <div className="ad-avatar">{adminName.charAt(0).toUpperCase()}</div>
               <div className="ad-avatar-info">
-                <span className="av-name">Seller Admin</span>
+                <span className="av-name">{adminName}</span>
                 <span className="av-role">Store Owner</span>
               </div>
             </div>
@@ -349,7 +499,7 @@ export default function Admin() {
         {activeNav !== 'Analytics' && (
           <section className="ad-hero">
             <div className="ad-hero-left">
-              <p className="hero-eyebrow">🔥 Welcome back, Admin</p>
+              <p className="hero-eyebrow">🔥 Welcome back, {adminName}!</p>
               <h1 className="hero-title">
                 Manage Your<br />
                 <span className="hero-accent">QuickBite Store</span>
@@ -611,7 +761,7 @@ export default function Admin() {
                                 <span>{getCustomerName(o.address)}</span>
                               </div>
                             </td>
-                            <td className="td-total">₹{o.total}</td>
+                            <td className="td-total">₹{calcSellerRev(o)}</td>
                             <td>
                               <span className={`ad-badge ${cls}`}>
                                 {SIcon && <SIcon size={12} />} {o.status}
@@ -640,7 +790,7 @@ export default function Admin() {
             {/* PRODUCT INVENTORY (DYNAMIC) */}
             <section className="ad-section ad-products-section">
               <div className="ad-sec-header">
-                <h2 className="ad-sec-title">My Products ({products.length})</h2>
+                <h2 className="ad-sec-title">My Products ({adminProducts.length})</h2>
                 <button className="ad-sec-action ad-sec-add" onClick={() => openPanel()}>
                   <Plus size={15}/> Add New
                 </button>
@@ -787,6 +937,18 @@ export default function Admin() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* ══════════ TOAST NOTIFICATION POPUP ══════════ */}
+      {toastMsg && (
+        <div className="ad-toast-popup">
+          <div className="atp-icon"><Bell size={18}/></div>
+          <div className="atp-body">
+            <span className="atp-title">New Activity</span>
+            <span className="atp-msg">{toastMsg}</span>
+          </div>
+          <button className="atp-close" onClick={() => setToastMsg('')}><X size={14}/></button>
         </div>
       )}
 

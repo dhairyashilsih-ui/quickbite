@@ -927,3 +927,259 @@
   background: #fffbeb;
   color: #d97706;
 }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   NOTIFICATION BELL & DROPDOWN PANEL
+═══════════════════════════════════════════ */
+
+/* Active bell state */
+.ad-icon-btn.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #3b82f6;
+}
+
+/* Red number badge on bell */
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  background: #e63946;
+  color: #fff;
+  border-radius: 99px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  padding: 0 3px;
+  line-height: 1;
+  animation: notifPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes notifPop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Wrapper for positioning */
+.ad-notif-wrapper {
+  position: relative;
+}
+
+/* Dropdown panel */
+.ad-notif-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 360px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 4px 15px rgba(0,0,0,0.08);
+  border: 1.5px solid #f1f5f9;
+  z-index: 9999;
+  overflow: hidden;
+  animation: dropDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes dropDown {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Panel header */
+.anp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1.5px solid #f1f5f9;
+  background: #fafafa;
+}
+
+.anp-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.anp-clear {
+  font-size: 0.75rem;
+  color: #e63946;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.anp-clear:hover { background: #fff0f1; }
+
+/* Scrollable list */
+.anp-list {
+  max-height: 340px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.anp-list::-webkit-scrollbar { width: 4px; }
+.anp-list::-webkit-scrollbar-track { background: transparent; }
+.anp-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+
+/* Empty state */
+.anp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2.5rem 1rem;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+.anp-empty p { margin: 0; text-align: center; }
+
+/* Notification item */
+.anp-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid #f8fafc;
+  transition: background 0.15s;
+  cursor: default;
+}
+.anp-item:last-child { border-bottom: none; }
+.anp-item:hover { background: #f8fafc; }
+
+.anp-item.unread { background: #fffbf5; }
+.anp-item.unread:hover { background: #fff7ed; }
+
+/* Icon bubble per type */
+.anp-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.anp-item.order .anp-icon   { background: #ecfdf5; color: #16a34a; }
+.anp-item.status .anp-icon  { background: #eff6ff; color: #3b82f6; }
+.anp-item.info .anp-icon    { background: #faf5ff; color: #a855f7; }
+
+.anp-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+  min-width: 0;
+}
+.anp-msg {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.45;
+}
+.anp-time {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Footer */
+.anp-footer {
+  padding: 0.6rem 1.25rem;
+  border-top: 1.5px solid #f1f5f9;
+  background: #fafafa;
+}
+.anp-refresh {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
+   PREMIUM TOAST POPUP (bottom-right)
+═══════════════════════════════════════════ */
+.ad-toast-popup {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 99999;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  max-width: 340px;
+  animation: slideUp 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-left: 3px solid #e63946;
+}
+
+.atp-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(230, 57, 70, 0.2);
+  color: #e63946;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.atp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.atp-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.atp-msg {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.atp-close {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.atp-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
+

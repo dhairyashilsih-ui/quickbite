@@ -22,11 +22,16 @@ export default function ProductDetail() {
   const { addToCart } = useCart();
   const { toggleWishlist, isWishlisted } = useWishlist();
   const { products } = useProducts();
-  const product    = products.find(p => p.id === Number(id));
+  // Safe comparison matching both UUID strings and numeric endpoints
+  const product    = products.find(p => String(p.id) === String(id));
 
   const [activeImg, setActiveImg] = useState(0);
   const [qty,       setQty]       = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [id]);
 
   const handleAddToCart = () => {
     addToCart(product, qty);
