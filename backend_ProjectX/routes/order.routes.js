@@ -12,7 +12,7 @@ const requireAuth = (req, res, next) => {
     req.user = dec;
     next();
   } catch (e) {
-    res.status(403).json({ success: false, message: 'Invalid token.' });
+    res.status(403).json({ success: false, message: `Invalid token: ${e.message}` });
   }
 };
 
