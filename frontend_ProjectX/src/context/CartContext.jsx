@@ -3,7 +3,18 @@ import React, { createContext, useContext, useState } from 'react';
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('qb_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('qb_cart', JSON.stringify(cart));
+  }, [cart]);
 
   const addToCart = (product, qty = 1) => {
     setCart(prev => {
